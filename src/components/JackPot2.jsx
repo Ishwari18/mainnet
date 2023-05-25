@@ -1432,7 +1432,7 @@ export default function JackPot2({ p, title, second }) {
 		if (events.length > 0) {
 		  const latestEvent = events[events.length - 1];
 		  const eventTimestamp = latestEvent.block.timestamp;
-		  const tenMinutesAfterEvent = eventTimestamp + 600; // Add 600 seconds (10 minutes)
+		  const tenMinutesAfterEvent = eventTimestamp + 3600; // Add 600 seconds (10 minutes)
 		  const currentTime = Math.floor(Date.now() / 1000);
 		  const remainingTime = tenMinutesAfterEvent - currentTime;
   
