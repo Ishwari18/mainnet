@@ -21,8 +21,7 @@ contract BATMAN is ERC20, Ownable {
     uint256 public moment;
     address public lastUser;
     uint256 public amountPerHour;
-
-     event GetReward(address _winner, uint256 _reward);
+    
     event UserUpdated(address _newUser, uint256 _timestamp);
     event Updated(address _lastUser, uint256 _timestamp);
 
