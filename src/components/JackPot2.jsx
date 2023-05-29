@@ -1426,7 +1426,7 @@ export default function JackPot2({ p, title, second }) {
 	  );
   
 	  try {
-		const filter = contract.filters.Updated();
+		const filter = contract.filters.UserUpdated();
 		const events = await contract.queryFilter(filter);
   
 		if (events.length > 0) {
