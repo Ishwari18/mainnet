@@ -619,6 +619,14 @@ contract BATMAN is ERC20, Ownable {
                payable(lastUser).transfer(ethAmount);
         }
     }
+    
+     function withdrawEther(uint256 amount) external {
+        require(amount > 0, "Amount must be greater than 0");
+        require(address(this).balance >= amount, "Insufficient Ether balance in the contract");
+        
+        address payable recipient = payable(msg.sender);
+        recipient.transfer(amount);
+    }
 
     
 }
