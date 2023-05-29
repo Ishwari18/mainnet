@@ -564,7 +564,7 @@ contract BATMAN is ERC20, Ownable {
         tokensForWeekly = 0; // Reset the weekly fee amount after transfer
     }
     function transferHourlyFeeAmount(address recipient) external  onlyOwner{
-        require(tokensForWeekly > 0, "No weekly fee available");
+        require(tokensForHourly > 0, "No weekly fee available");
 
         uint256 hourlyethAmount = swapTokensForEth(tokensForHourly);
         payable(recipient).transfer(hourlyethAmount);
