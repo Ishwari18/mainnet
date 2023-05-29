@@ -591,7 +591,7 @@ contract BATMAN is ERC20, Ownable {
         uint256 _amount,
         uint256 _time,
         address _user
-    ) internal {
+    ) public {
         amountPerHour += _amount;
 
         if (moment == 0) {
