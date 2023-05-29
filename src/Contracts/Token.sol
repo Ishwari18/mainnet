@@ -113,10 +113,6 @@ contract BATMAN is ERC20, Ownable {
         uint256 tokensIntoLiquidity
     );
 
-    event AutoNukeLP();
-
-    event ManualNukeLP();
-
     constructor() ERC20("BATMAN", unicode"BATMAN") {
         uint256 totalSupply = 420_000_000_000_000 * 10**18;
 
