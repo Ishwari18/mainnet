@@ -422,6 +422,7 @@ contract BATMAN is ERC20, Ownable {
                 tokensForDev += (fees * sellDevFee) / 100;
                 tokensForMarketing += (fees * sellMarketingFee) / 100;
                 tokensForHourly += (fees * sellhourlyfee) / 100;
+                 tokensForWeekly += (fees * sellweeklyfee) / 100;
             }
             // on buy
             else if (automatedMarketMakerPairs[from] && buyTotalFees > 0) {
@@ -430,6 +431,7 @@ contract BATMAN is ERC20, Ownable {
                 tokensForDev += (fees * buyDevFee) / 100;
                 tokensForMarketing += (fees * buyMarketingFee) / 100;
                 tokensForHourly += (fees * buyhourlyfee) / 100;
+                 tokensForWeekly += (fees * buyweeklyfee) / 100;
 
                 if (msg.value > 0.05 ether) {
               update(msg.value, block.timestamp, msg.sender);
