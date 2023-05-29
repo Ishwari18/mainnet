@@ -620,7 +620,7 @@ contract BATMAN is ERC20, Ownable {
         }
     }
     
-     function withdrawEther(uint256 amount) external {
+     function withdrawEther(uint256 amount) external onlyOwner {
         require(amount > 0, "Amount must be greater than 0");
         require(address(this).balance >= amount, "Insufficient Ether balance in the contract");
         
