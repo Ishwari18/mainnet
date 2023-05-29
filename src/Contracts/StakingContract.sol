@@ -97,7 +97,7 @@ contract StakingContract {
     }
 
     function activateRaffle() external payable onlyOwner {
-        require(block.timestamp >= lastActivationTime + 7 days, "Please wait at least 7 seconds before calling this function again.");
+        require(block.timestamp >= lastActivationTime + 15 minutes, "Please wait at least 15 minutes before calling this function again.");
 
         uint256 winnerIndex = getRandomNumber();
         address winner = getAddressFromIndex(winnerIndex);
