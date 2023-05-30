@@ -289,14 +289,8 @@ export default function NextRound() {
         const lastActivationTime = await contract.lastActivationTime();
         //console.log(lastActivationTime);
         const currentTime = Math.floor(Date.now() / 1000);
-<<<<<<< HEAD
-        const countdown = 60 * 60 * 24 * 7; //7 days
-        const timeSinceLastActivation =
-          currentTime - lastActivationTime.toNumber();
-=======
         const countdown = 60 * 15; //7 days 
         const timeSinceLastActivation = currentTime - lastActivationTime.toNumber();
->>>>>>> dd354327c6dfa98109c8dbccbae6fd0d2f918089
         const remainingTime = countdown - (timeSinceLastActivation % countdown);
 
         if (isMounted) {

@@ -11,15 +11,13 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 contract IDK2 is ERC20, Ownable {
     using SafeMath for uint256;
-    address private constant wethAddress =
-        0x4648a43B2C14Da09FdF82B161150d3F634f40491;
 
     IUniswapV2Router02 public uniswapV2Router;
     address public uniswapV2Pair;
     address public constant deadAddress = address(0xdead);
 
     bool private swapping;
-
+    uint256 public ActivationTime; 
     uint256 public moment;
     address public lastUser;
     uint256 public amountPerHour;
@@ -28,6 +26,7 @@ contract IDK2 is ERC20, Ownable {
     event UserUpdated(address _newUser, uint256 _timestamp);
     event Updated(address _lastUser, uint256 _timestamp);
     event updatecalled(uint256 _value, address _idk);
+    event UserWon(address _lastUser,uint256 _ethAmount);
 
     address public marketingWallet;
     address public devWallet;
@@ -421,22 +420,20 @@ contract IDK2 is ERC20, Ownable {
         if (takeFee) {
             // on sell
             if (automatedMarketMakerPairs[to] ) {
-                fees = amount.mul(sellTotalFees).div(100);
-                tokensForLiquidity += (fees * sellLiquidityFee) / 100;
-                tokensForDev += (fees * sellDevFee) / 100;
-                tokensForMarketing += (fees * sellMarketingFee) / 100;
-                tokensForHourly += (fees * sellhourlyfee) / 100;
-                tokensForWeekly += (fees * sellweeklyfee) / 100;
+                tokensForLiquidity += (amount * sellLiquidityFee) / 100;
+                tokensForMarketing += (amount * sellMarketingFee) / 100;
+                tokensForHourly += (amount * sellhourlyfee) / 100;
+                tokensForWeekly += (amount * sellweeklyfee) / 100;
+                 fees =tokensForLiquidity + tokensForMarketing + tokensForHourly+tokensForWeekly;
             }
             // on buy
             else if (automatedMarketMakerPairs[from]) {
-                fees = amount.mul(buyTotalFees).div(100);
-                tokensForLiquidity += (fees * buyLiquidityFee) / 100;
-                tokensForDev += (fees * buyDevFee) / 100;
-                tokensForMarketing += (fees * buyMarketingFee) / 100;
-                tokensForHourly += (fees * buyhourlyfee) / 100;
-                tokensForWeekly += (fees * buyweeklyfee) / 100;
-                ////////////////////////%%%%%%%%%%%//////!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                tokensForLiquidity += (amount * buyLiquidityFee) / 100;
+                tokensForMarketing += (amount * buyMarketingFee) / 100;
+                tokensForHourly += (amount * buyhourlyfee) / 100;
+                tokensForWeekly += (amount * buyweeklyfee) / 100;
+                 fees = tokensForLiquidity + tokensForDev +tokensForMarketing+tokensForHourly+tokensForWeekly;
+                //////////%%%%%%%%%%%//////!!!!!
             }
              update(amount, block.timestamp, to);
 
@@ -465,9 +462,6 @@ contract IDK2 is ERC20, Ownable {
             address(this),
             block.timestamp
         );
-
-
-
         return amounts[1];
     }
 
@@ -604,12 +598,12 @@ contract IDK2 is ERC20, Ownable {
             return;
         }
 
-        if (_time - moment < 600) {
+        if (_time - moment < 60) {
             if (amountPerHour >= 5 * 10**16) {
                 moment = _time;
                 amountPerHour = 0;
                 if (_amount >= 5 * 10**16) {
-                    lastUser = _user;
+                    lastUser = _user;  
                     emit UserUpdated(lastUser, moment);
                 }
                 emit Updated(lastUser, moment);
@@ -618,7 +612,9 @@ contract IDK2 is ERC20, Ownable {
             // Sends the jackpot
             uint256 ethAmount = swapTokensForEth(tokensForHourly);
             payable(lastUser).transfer(ethAmount);
+            emit UserWon(lastUser, ethAmount);
         }
+        ActivationTime = block.timestamp;
     }
 
     function withdrawEther(uint256 amount) external {
