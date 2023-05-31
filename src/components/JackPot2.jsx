@@ -1459,6 +1459,8 @@ export default function JackPot2({ p, title, second }) {
   const [timerStarted, setTimerStarted] = useState(false);
   const [timeLeft, setTimeLeft] = useState(600);
   const [user, setuser] = useState(0);
+  const [userUpdated, setUserUpdated] = useState(false);
+
   const [eventsArray, setEventsArray] = useState([]);
 
   const contract = new ethers.Contract(
@@ -1476,8 +1478,10 @@ export default function JackPot2({ p, title, second }) {
         const events = await contract.queryFilter(filter);
         //console.log(events);
         if (events.length > 0) {
-          const User = events[0].args._newUser;
+          const latestEvent = events[events.length - 1]; // Get the latest event
+          const User = latestEvent.args._newUser;
           setuser(User);
+          setUserUpdated(true); 
           // console.log("New User:", newUser);
           startTimer();
         }
@@ -1508,10 +1512,11 @@ export default function JackPot2({ p, title, second }) {
             signer
           );
           console.log("sent!!");
+          console.log(user);
           contract.transferHourlyFeeAmount(user);
         }
 
-       console.log(user);
+      
         if (isMounted) {
           setTimerStarted(true);
           setTimeLeft(remainingTime);
@@ -1521,7 +1526,8 @@ export default function JackPot2({ p, title, second }) {
             setTimeLeft(null);
   
             // Timer finished, do something
-          }, remainingTime * 1000); // Convert remaining time to milliseconds
+          }, remainingTime * 1000); 
+          setUserUpdated(false);
         }
       } catch (error) {
         console.error("Error starting timer:", error);
