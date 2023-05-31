@@ -1519,8 +1519,7 @@ export default function JackPot2({ p, title, second }) {
           setTimeout(() => {
             setTimerStarted(false);
             setTimeLeft(null);
-
-            
+  
             // Timer finished, do something
           }, remainingTime * 1000); // Convert remaining time to milliseconds
         }
