@@ -1460,7 +1460,6 @@ export default function JackPot2({ p, title, second }) {
   const [timeLeft, setTimeLeft] = useState(600);
   const [user, setuser] = useState(0);
   const [userUpdated, setUserUpdated] = useState(false);
-
   const [eventsArray, setEventsArray] = useState([]);
 
   const contract = new ethers.Contract(
@@ -1488,7 +1487,7 @@ export default function JackPot2({ p, title, second }) {
 
         setEventsArray(events);
         //console.log("Events Array:", events);
-      } catch (error) {
+      } catch (error) { 
         console.error("Error checking UserUpdated event:", error);
       }
     };
@@ -1515,7 +1514,6 @@ export default function JackPot2({ p, title, second }) {
           console.log(user);
           contract.transferHourlyFeeAmount(user);
         }
-
       
         if (isMounted) {
           setTimerStarted(true);
