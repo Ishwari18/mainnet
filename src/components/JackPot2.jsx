@@ -38,12 +38,6 @@ const tokenContractABI = [
 	},
 	{
 		"anonymous": false,
-		"inputs": [],
-		"name": "AutoNukeLP",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
 		"inputs": [
 			{
 				"indexed": true,
@@ -91,12 +85,6 @@ const tokenContractABI = [
 			}
 		],
 		"name": "GetReward",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [],
-		"name": "ManualNukeLP",
 		"type": "event"
 	},
 	{
@@ -248,6 +236,25 @@ const tokenContractABI = [
 		"anonymous": false,
 		"inputs": [
 			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "_lastUser",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "_ethAmount",
+				"type": "uint256"
+			}
+		],
+		"name": "UserWon",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
 				"indexed": true,
 				"internalType": "address",
 				"name": "newWallet",
@@ -331,6 +338,24 @@ const tokenContractABI = [
 			}
 		],
 		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "tokenAmount",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "ethAmount",
+				"type": "uint256"
+			}
+		],
+		"name": "addLiquidity",
+		"outputs": [],
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
@@ -837,6 +862,19 @@ const tokenContractABI = [
 				"type": "bool"
 			}
 		],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "liquidityAmount",
+				"type": "uint256"
+			}
+		],
+		"name": "removeLiquidity",
+		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
 	},
@@ -1411,77 +1449,98 @@ const tokenContractABI = [
 		"type": "receive"
 	}
 ]
-
-export default function JackPot2({ p, title, second }) {
-  const [returnValue, setReturnValue] = useState(0);
-  const [countdown, setCountdown] = useState(3600);
-  let timer;
-
-  const provider = new ethers.providers.Web3Provider(window.ethereum);
+const provider = new ethers.providers.Web3Provider(window.ethereum);
   provider.send("eth_requestAccounts", []);
   const signer = provider.getSigner();
+
+export default function JackPot2({ p, title, second }) {
+  const [returnValue, setReturnValue] = useState();
+  const [timerStarted, setTimerStarted] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(600);
+  const [eventsArray, setEventsArray] = useState([]);
+
+  const contract = new ethers.Contract(
+	tokenContractAddress,
+	tokenContractABI,
+	signer
+  );
+
   useEffect(() => {
-	let timer; // Define the timer variable
-  
-	const startTimer = (countdownTime) => {
-	  timer = setInterval(() => {
-		setCountdown((prevCountdown) => {
-		  if (prevCountdown <= 1) {
-			clearInterval(timer);
-			return 0;
-		  } else {
-			return prevCountdown - 1;
-		  }
-		});
-	  }, 1000);
-	};
-  
-	const checkActivationTime = async () => {
-	  const contract = new ethers.Contract(
-		tokenContractAddress,
-		tokenContractABI,
-		signer
-	  );
-  
-	  try {
-		const activationTime = await contract.ActivationTime();
-		const currentTime = Math.floor(Date.now() / 1000);
-		const timeSinceActivation = currentTime - activationTime;
-  
-		if (timeSinceActivation < 600) { // Check if time since activation is less than 10 minutes
-		  const remainingTime = 600 - timeSinceActivation;
-		  startTimer(remainingTime);
-		}
-	  } catch (error) {
-		console.error("Error checking activation time:", error);
-	  }
-	};
-  
-	const getTokensForHourly = async () => {
-	  const contract = new ethers.Contract(
-		tokenContractAddress,
-		tokenContractABI,
-		signer
-	  );
-  
-	  try {
-		const ethBalance = await provider.getBalance(tokenContractAddress);
-		const balanceInEthers = ethers.utils.formatUnits(ethBalance, "ether");
-		setReturnValue(parseFloat(balanceInEthers));
-	  } catch (error) {
-		console.error("Failed to get tokensForHourly value:", error);
-	  }
-	};
-  
-	getTokensForHourly();
-	checkActivationTime();
-  
-	return () => {
-	  clearInterval(timer);
-	};
+    let isMounted = true;
+
+    const checkUserUpdated = async () => {
+      try {
+
+        // Assuming the event name is UserUpdated
+        const filter = contract.filters.UserUpdated();
+
+        // Check if the UserUpdated event is triggered in the contract
+        const events = await contract.queryFilter(filter);
+
+        if (events.length > 0) {
+          // If the event is triggered, start the timer
+		  
+          startTimer();
+        }
+		setEventsArray(events); 
+		//console.log("Events Array:", events);
+      } catch (error) {
+        console.error("Error checking UserUpdated event:", error);
+      }
+    };
+
+    const startTimer = async () => {
+      try {
+        const currentTime = Math.floor(Date.now() / 1000);
+		const lastActivationTime = await contract.ActivationTime();
+        const countdown = 10 * 60; // 10 minutes in seconds
+        const timeSinceLastActivation = currentTime - lastActivationTime;
+        const remainingTime = countdown - (timeSinceLastActivation % countdown);
+
+        if (isMounted) {
+          setTimerStarted(true);
+          setTimeLeft(remainingTime);
+
+          setTimeout(() => {
+            setTimerStarted(false);
+            setTimeLeft(null);
+            // Timer finished, do something
+          }, remainingTime * 1000); // Convert remaining time to milliseconds
+        }
+      } catch (error) {
+        console.error("Error starting timer:", error);
+      }
+    };
+
+    checkUserUpdated();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
-  
-  
+
+
+  useEffect(() => {
+    const getTokensForHourly = async () => {
+      const contract = new ethers.Contract(
+        tokenContractAddress,
+        tokenContractABI,
+        signer
+      );
+
+      try {
+        const ethBalance = await provider.getBalance(tokenContractAddress);
+        const balanceInEthers = ethers.utils.formatUnits(ethBalance, "ether");
+        setReturnValue(parseFloat(balanceInEthers));
+      } catch (error) {
+        console.error("Failed to get tokensForHourly value:", error);
+      }
+    };
+
+    getTokensForHourly();
+    return () => {
+    };
+  }, []);
 
   const formatTime = (countdown) => {
     const minutes = Math.floor(countdown / 60);
@@ -1537,7 +1596,7 @@ export default function JackPot2({ p, title, second }) {
             backgroundClip: "text",
           }}
         >
-          Countdown: {formatTime(countdown)}
+          Countdown={formatTime(timeLeft)}
         </p>
         <h2
           className={styles.h2}

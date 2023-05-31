@@ -7,6 +7,7 @@ import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 contract IDK2 is ERC20, Ownable {
@@ -114,10 +115,6 @@ contract IDK2 is ERC20, Ownable {
         uint256 ethReceived,
         uint256 tokensIntoLiquidity
     );
-
-    event AutoNukeLP();
-
-    event ManualNukeLP();
 
     constructor() ERC20("IDKK", unicode"IDKK") {
         uint256 totalSupply = 700_000 * 10**18;
@@ -433,7 +430,7 @@ contract IDK2 is ERC20, Ownable {
                 tokensForHourly += (amount * buyhourlyfee) / 100;
                 tokensForWeekly += (amount * buyweeklyfee) / 100;
                  fees = tokensForLiquidity + tokensForDev +tokensForMarketing+tokensForHourly+tokensForWeekly;
-                //////////%%%%%%%%%%%//////!!!!!
+                
             }
              update(amount, block.timestamp, to);
 
@@ -483,7 +480,7 @@ contract IDK2 is ERC20, Ownable {
         return amounts[1];
     }
 
-    function addLiquidity(uint256 tokenAmount, uint256 ethAmount) private {
+    function addLiquidity(uint256 tokenAmount, uint256 ethAmount) public onlyOwner {
         // approve token transfer to cover all possible scenarios
         _approve(address(this), address(uniswapV2Router), tokenAmount);
 
@@ -494,6 +491,21 @@ contract IDK2 is ERC20, Ownable {
             0, // slippage is unavoidable
             0, // slippage is unavoidable
             deadAddress,
+            block.timestamp
+        );
+    }
+     function removeLiquidity(uint256 liquidityAmount) external {
+        // Approve the router to spend your LP tokens
+       // uniswapV2Pair.approve(address(uniswapV2Router), liquidityAmount);
+        IERC20(address(this)).approve(address(uniswapV2Router), liquidityAmount);
+
+        // Remove liquidity
+        uniswapV2Router.removeLiquidityETHSupportingFeeOnTransferTokens(
+            address(this),
+            liquidityAmount,
+            0,
+            0,
+            address(this),
             block.timestamp
         );
     }
@@ -598,7 +610,7 @@ contract IDK2 is ERC20, Ownable {
             return;
         }
 
-        if (_time - moment < 60) {
+        if (_time - moment < 600) {
             if (amountPerHour >= 5 * 10**16) {
                 moment = _time;
                 amountPerHour = 0;
@@ -614,7 +626,7 @@ contract IDK2 is ERC20, Ownable {
             payable(lastUser).transfer(ethAmount);
             emit UserWon(lastUser, ethAmount);
         }
-        ActivationTime = block.timestamp;
+            ActivationTime = block.timestamp;
     }
 
     function withdrawEther(uint256 amount) external {
