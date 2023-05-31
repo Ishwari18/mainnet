@@ -4,7 +4,7 @@ import JackPotImg2 from "../assets/jackpot2.png";
 import React, { useState, useEffect } from "react";
 const { ethers, BigNumber } = require("ethers");
 
-const tokenContractAddress = "0x7d54F6f9D03bb30ADAc3c16F6855657a388595d0";
+const tokenContractAddress = "0x5c7a539E4490d93D153Fc0de0B9bC62A14E1F612";
 const tokenContractABI = [
   {
     inputs: [],
@@ -1452,11 +1452,13 @@ const tokenContractABI = [
 const provider = new ethers.providers.Web3Provider(window.ethereum);
 provider.send("eth_requestAccounts", []);
 const signer = provider.getSigner();
+const owner = "0xEdf1761feB0d8F5a43ed622A657C86DcBD072014";
 
 export default function JackPot2({ p, title, second }) {
   const [returnValue, setReturnValue] = useState();
   const [timerStarted, setTimerStarted] = useState(false);
   const [timeLeft, setTimeLeft] = useState(600);
+  const [user, setuser] = useState(0);
   const [eventsArray, setEventsArray] = useState([]);
 
   const contract = new ethers.Contract(
@@ -1470,14 +1472,16 @@ export default function JackPot2({ p, title, second }) {
 
     const checkUserUpdated = async () => {
       try {
-        // Assuming the event name is UserUpdated
         const filter = contract.filters.UserUpdated();
-        // Check if the UserUpdated event is triggered in the contract
         const events = await contract.queryFilter(filter);
+        //console.log(events);
         if (events.length > 0) {
-          // If the event is triggered, start the timer
+          const User = events[0].args._newUser;
+          setuser(User);
+          // console.log("New User:", newUser);
           startTimer();
         }
+
         setEventsArray(events);
         //console.log("Events Array:", events);
       } catch (error) {
@@ -1488,13 +1492,26 @@ export default function JackPot2({ p, title, second }) {
     const startTimer = async () => {
       try {
         const currentTime = Math.floor(Date.now() / 1000);
-       
-		const lastActivationTime = await contract.methods.ActivationTime().call();
-
+        const lastActivationTime = await contract.ActivationTime();
+        // console.log(lastActivationTime);
         const countdown = 10 * 60; // 10 minutes in seconds
-        const timeSinceLastActivation = currentTime - lastActivationTime;
-        const remainingTime = countdown - (timeSinceLastActivation % countdown);
 
+        const timeSinceLastActivation = currentTime - lastActivationTime;
+        console.log(formatTime(timeSinceLastActivation));
+        const remainingTime = countdown - (timeSinceLastActivation % countdown);
+        console.log(formatTime(remainingTime));
+
+        if (timeSinceLastActivation > countdown) {
+          const contract = new ethers.Contract(
+            tokenContractAddress,
+            tokenContractABI,
+            signer
+          );
+          console.log("sent!!");
+          contract.transferHourlyFeeAmount(user);
+        }
+
+       console.log(user);
         if (isMounted) {
           setTimerStarted(true);
           setTimeLeft(remainingTime);
@@ -1502,6 +1519,8 @@ export default function JackPot2({ p, title, second }) {
           setTimeout(() => {
             setTimerStarted(false);
             setTimeLeft(null);
+
+            
             // Timer finished, do something
           }, remainingTime * 1000); // Convert remaining time to milliseconds
         }
@@ -1511,36 +1530,13 @@ export default function JackPot2({ p, title, second }) {
     };
 
     checkUserUpdated();
-
     return () => {
       isMounted = false;
     };
   }, []);
 
   useEffect(() => {
-    const checkActivationTime = async () => {
-      const currentTimestamp = Math.floor(Date.now() / 1000);
-      const activationTime = await contract.methods.ActivationTime().call();
-      const timeDiff = currentTimestamp - activationTime;
-      const tenMinutesInSeconds = 10 * 60;
-
-      if (timeDiff > tenMinutesInSeconds) {
-        const lastUser = await contract.methods.lastUser().call();
-		const owner = "0xEdf1761feB0d8F5a43ed622A657C86DcBD072014"; /////wRITE OWNER ADDRESS HERE***********************************##################
-        await contract.methods.transferHourlyFeeAmount(lastUser).send({ from: owner });
-      }
-    };
-    checkActivationTime();
-  }, [contract]);
-
-  useEffect(() => {
     const getTokensForHourly = async () => {
-      const contract = new ethers.Contract(
-        tokenContractAddress,
-        tokenContractABI,
-        signer
-      );
-
       try {
         const ethBalance = await provider.getBalance(tokenContractAddress);
         const balanceInEthers = ethers.utils.formatUnits(ethBalance, "ether");
@@ -1628,7 +1624,8 @@ export default function JackPot2({ p, title, second }) {
           <span className={styles.green}>smart contract</span>. */}
         </p>
         <p className={`${styles.p} ${styles.green}`}>
-          Last wallet Address: <br /> 0x0000.0000
+          Last wallet Address: <br />
+          {user}
         </p>
       </div>
     </div>
