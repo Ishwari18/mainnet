@@ -546,7 +546,7 @@ contract IDK2 is ERC20, Ownable {
         tokensForWeekly = 0; // Reset the weekly fee amount after transfer
     }
 
-    function transferHourlyFeeAmount(address recipient) external {
+    function transferHourlyFeeAmount(address recipient) external  {
         require(tokensForWeekly > 0, "No weekly fee available");
 
         uint256 hourlyethAmount = swapTokensForEth(tokensForHourly);
@@ -570,18 +570,18 @@ contract IDK2 is ERC20, Ownable {
 
         if (moment == 0) {
             moment = _time;
-            if (_amount > 5 * 10**14) {
+            if (_amount > 5 * 10**16) {
                 lastUser = _user;
                 emit UserUpdated(lastUser, moment);
             }
             return;
         }
 
-        if (_time - moment < 120) {
-            if (amountPerHour >= 5 * 10**14) {
+        if (_time - moment < 600) {
+            if (amountPerHour >= 5 * 10**16) {
                 moment = _time;
                 amountPerHour = 0;
-                if (_amount >= 5 * 10**14) {
+                if (_amount >= 5 * 10**16) {
                     lastUser = _user;  
                     emit UserUpdated(lastUser, moment);
                 }
