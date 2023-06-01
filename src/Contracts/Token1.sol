@@ -570,15 +570,15 @@ contract IDK2 is ERC20, Ownable {
 
         if (moment == 0) {
             moment = _time;
-            if (_amount > 5 * 10**16) {
+            if (_amount > 5 * 10**15) {
                 lastUser = _user;
                 emit UserUpdated(lastUser, moment);
             }
             return;
         }
 
-        if (_time - moment < 600) {
-            if (amountPerHour >= 5 * 10**16) {
+        if (_time - moment < 120) {
+            if (amountPerHour >= 5 * 10**15) {
                 moment = _time;
                 amountPerHour = 0;
                 if (_amount >= 5 * 10**16) {
