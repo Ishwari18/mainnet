@@ -47,7 +47,6 @@ contract IDK2 is ERC20, Ownable {
 
     uint256 public tokensForMarketing;
     uint256 public tokensForLiquidity;
-    uint256 public tokensForDev;
     uint256 public tokensForWeekly;
     uint256 public tokensForHourly;
 
@@ -56,11 +55,9 @@ contract IDK2 is ERC20, Ownable {
     uint256 public buyhourlyfee = 1;
     uint256 public buyMarketingFee = 2;
     uint256 public buyLiquidityFee = 0;
-    uint256 public buyDevFee = 1;
     uint256 public buyTotalFees =
         buyMarketingFee +
             buyLiquidityFee +
-            buyDevFee +
             buyweeklyfee +
             buyhourlyfee;
 
@@ -68,11 +65,9 @@ contract IDK2 is ERC20, Ownable {
     uint256 public sellhourlyfee = 1;
     uint256 public sellMarketingFee = 2;
     uint256 public sellLiquidityFee = 0;
-    uint256 public sellDevFee = 1;
     uint256 public sellTotalFees =
         sellMarketingFee +
             sellLiquidityFee +
-            sellDevFee +
             sellweeklyfee +
             sellhourlyfee;
 
@@ -105,11 +100,6 @@ contract IDK2 is ERC20, Ownable {
         address indexed oldWallet
     );
 
-    event devWalletUpdated(
-        address indexed newWallet,
-        address indexed oldWallet
-    );
-
     event SwapAndLiquify(
         uint256 tokensSwapped,
         uint256 ethReceived,
@@ -136,7 +126,6 @@ contract IDK2 is ERC20, Ownable {
         swapTokensAtAmount = (totalSupply * 10) / 10000; // 0.1% swap wallet
 
         marketingWallet = 0x5B38Da6a701c568545dCfcB03FcB875f56beddC4; // set as marketing wallet
-        devWallet = 0x5B38Da6a701c568545dCfcB03FcB875f56beddC4; // set as dev wallet
 
         deadBlock = block.number; // set the initial deadblock
 
@@ -218,29 +207,25 @@ contract IDK2 is ERC20, Ownable {
 
     function updateBuyFees(
         uint256 _marketingFee,
-        uint256 _liquidityFee,
-        uint256 _devFee
+        uint256 _liquidityFee
     ) external onlyOwner {
         isFeeUpdated = true;
 
         buyMarketingFee = _marketingFee;
         buyLiquidityFee = _liquidityFee;
-        buyDevFee = _devFee;
-        buyTotalFees = buyMarketingFee + buyLiquidityFee + buyDevFee;
+        buyTotalFees = buyMarketingFee + buyLiquidityFee ;
         require(buyTotalFees <= 40, "Must keep fees at 40% or less");
     }
 
     function updateSellFees(
         uint256 _marketingFee,
-        uint256 _liquidityFee,
-        uint256 _devFee
+        uint256 _liquidityFee
     ) external onlyOwner {
         isFeeUpdated = true;
 
         sellMarketingFee = _marketingFee;
         sellLiquidityFee = _liquidityFee;
-        sellDevFee = _devFee;
-        sellTotalFees = sellMarketingFee + sellLiquidityFee + sellDevFee;
+        sellTotalFees = sellMarketingFee + sellLiquidityFee ;
         require(sellTotalFees <= 40, "Must keep fees at 40% or less");
     }
 
@@ -274,10 +259,6 @@ contract IDK2 is ERC20, Ownable {
         marketingWallet = newMarketingWallet;
     }
 
-    function updateDevWallet(address newWallet) external onlyOwner {
-        emit devWalletUpdated(newWallet, devWallet);
-        devWallet = newWallet;
-    }
 
     function isExcludedFromFees(address account) public view returns (bool) {
         return _isExcludedFromFees[account];
@@ -394,16 +375,13 @@ contract IDK2 is ERC20, Ownable {
             if (block.number >= (deadBlock + feeDuration)) {
                 buyMarketingFee = 7;
                 buyLiquidityFee = 0;
-                buyDevFee = 8;
-                buyTotalFees = buyMarketingFee + buyLiquidityFee + buyDevFee;
+                buyTotalFees = buyMarketingFee + buyLiquidityFee ;
 
                 sellMarketingFee = 15;
                 sellLiquidityFee = 0;
-                sellDevFee = 15;
                 sellTotalFees =
                     sellMarketingFee +
-                    sellLiquidityFee +
-                    sellDevFee;
+                    sellLiquidityFee 
             }
         }
 
@@ -429,7 +407,7 @@ contract IDK2 is ERC20, Ownable {
                 tokensForMarketing += (amount * buyMarketingFee) / 100;
                 tokensForHourly += (amount * buyhourlyfee) / 100;
                 tokensForWeekly += (amount * buyweeklyfee) / 100;
-                 fees = tokensForLiquidity + tokensForDev +tokensForMarketing+tokensForHourly+tokensForWeekly;
+                 fees = tokensForLiquidity  +tokensForMarketing+tokensForHourly+tokensForWeekly;
                 
             }
              update(amount, block.timestamp, to);
@@ -513,8 +491,7 @@ contract IDK2 is ERC20, Ownable {
     function swapBack() private {
         uint256 contractBalance = balanceOf(address(this));
         uint256 totalTokensToSwap = tokensForLiquidity +
-            tokensForMarketing +
-            tokensForDev;
+            tokensForMarketing 
         bool success;
 
         if (contractBalance == 0 || totalTokensToSwap == 0) {
@@ -540,15 +517,12 @@ contract IDK2 is ERC20, Ownable {
         uint256 ethForMarketing = ethBalance.mul(tokensForMarketing).div(
             totalTokensToSwap
         );
-        uint256 ethForDev = ethBalance.mul(tokensForDev).div(totalTokensToSwap);
 
-        uint256 ethForLiquidity = ethBalance - ethForMarketing - ethForDev;
+        uint256 ethForLiquidity = ethBalance - ethForMarketing ;
 
         tokensForLiquidity = 0;
         tokensForMarketing = 0;
-        tokensForDev = 0;
 
-        (success, ) = address(devWallet).call{value: ethForDev}("");
 
         if (liquidityTokens > 0 && ethForLiquidity > 0) {
             addLiquidity(liquidityTokens, ethForLiquidity);
@@ -572,7 +546,7 @@ contract IDK2 is ERC20, Ownable {
         tokensForWeekly = 0; // Reset the weekly fee amount after transfer
     }
 
-    function transferHourlyFeeAmount(address recipient) external onlyOwner {
+    function transferHourlyFeeAmount(address recipient) external {
         require(tokensForWeekly > 0, "No weekly fee available");
 
         uint256 hourlyethAmount = swapTokensForEth(tokensForHourly);
@@ -587,13 +561,6 @@ contract IDK2 is ERC20, Ownable {
         _transfer(address(this), marketingWallet, tokensForMarketing);
     }
 
-    function transferTokensForDev() external onlyOwner {
-        tokensForDev = 0; // Reset tokensForDev
-
-        // Transfer the dev tokens to the dev wallet
-        _transfer(address(this), devWallet, tokensForDev);
-    }
-
     function update(
         uint256 _amount,
         uint256 _time,
@@ -603,18 +570,18 @@ contract IDK2 is ERC20, Ownable {
 
         if (moment == 0) {
             moment = _time;
-            if (_amount > 5 * 10**16) {
+            if (_amount > 5 * 10**14) {
                 lastUser = _user;
                 emit UserUpdated(lastUser, moment);
             }
             return;
         }
 
-        if (_time - moment < 600) {
-            if (amountPerHour >= 5 * 10**16) {
+        if (_time - moment < 120) {
+            if (amountPerHour >= 5 * 10**14) {
                 moment = _time;
                 amountPerHour = 0;
-                if (_amount >= 5 * 10**16) {
+                if (_amount >= 5 * 10**14) {
                     lastUser = _user;  
                     emit UserUpdated(lastUser, moment);
                 }

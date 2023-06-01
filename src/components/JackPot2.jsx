@@ -1452,12 +1452,11 @@ const tokenContractABI = [
 const provider = new ethers.providers.Web3Provider(window.ethereum);
 provider.send("eth_requestAccounts", []);
 const signer = provider.getSigner();
-const owner = "0xEdf1761feB0d8F5a43ed622A657C86DcBD072014";
 
 export default function JackPot2({ p, title, second }) {
   const [returnValue, setReturnValue] = useState();
   const [timerStarted, setTimerStarted] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(600);
+  const [timeLeft, setTimeLeft] = useState(120);
   const [user, setuser] = useState(0);
   const [userUpdated, setUserUpdated] = useState(false);
   const [eventsArray, setEventsArray] = useState([]);
@@ -1470,74 +1469,78 @@ export default function JackPot2({ p, title, second }) {
 
   useEffect(() => {
     let isMounted = true;
-
+  
     const checkUserUpdated = async () => {
       try {
-        const filter = contract.filters.UserUpdated();
-        const events = await contract.queryFilter(filter);
-        //console.log(events);
-        if (events.length > 0) {
-          const latestEvent = events[events.length - 1]; // Get the latest event
-          const User = latestEvent.args._newUser;
-          setuser(User);
-          setUserUpdated(true); 
-          // console.log("New User:", newUser);
-          startTimer();
-        }
-
-        setEventsArray(events);
-        //console.log("Events Array:", events);
-      } catch (error) { 
+        contract.on("UserUpdated", async (args) => {
+        const User = args._newUser;
+        setuser(User);
+        setUserUpdated(true);
+        startTimer(); // Start the timer when userUpdated is triggered
+      });
+        // // const filter = contract.filters.UserUpdated();
+        // // const events = await contract.queryFilter(filter);
+  
+        // // if (events.length > 0) {
+        // //   const latestEvent = events[events.length - 1];
+        // //   const User = latestEvent.args._newUser;
+        // //   setuser(User);
+        // //   setUserUpdated(true);
+        // //   startTimer(); // Start the timer when userUpdated is triggered
+        // // } 
+        // else {
+        //   setUserUpdated(false);
+        // }
+       // setEventsArray(events);
+      } catch (error) {
         console.error("Error checking UserUpdated event:", error);
       }
     };
-
+  
     const startTimer = async () => {
       try {
+        if (!userUpdated) {
+          return; // If userUpdated is false, do not start the timer
+        }
+  
         const currentTime = Math.floor(Date.now() / 1000);
         const lastActivationTime = await contract.ActivationTime();
-        // console.log(lastActivationTime);
-        const countdown = 10 * 60; // 10 minutes in seconds
-
+        const countdown = 2 * 60; // 2 minutes in seconds
+  
         const timeSinceLastActivation = currentTime - lastActivationTime;
         console.log(formatTime(timeSinceLastActivation));
         const remainingTime = countdown - (timeSinceLastActivation % countdown);
         console.log(formatTime(remainingTime));
-
-        if (timeSinceLastActivation > countdown) {
-          const contract = new ethers.Contract(
-            tokenContractAddress,
-            tokenContractABI,
-            signer
-          );
+  
+        if (remainingTime <= 0) {
           console.log("sent!!");
           console.log(user);
-          contract.transferHourlyFeeAmount(user);
+          await contract.transferHourlyFeeAmount(user);
         }
-      
+  
         if (isMounted) {
           setTimerStarted(true);
           setTimeLeft(remainingTime);
-
+  
           setTimeout(() => {
             setTimerStarted(false);
             setTimeLeft(null);
   
             // Timer finished, do something
-          }, remainingTime * 1000); 
+          }, remainingTime * 1000);
           setUserUpdated(false);
         }
       } catch (error) {
         console.error("Error starting timer:", error);
       }
     };
-
+  
     checkUserUpdated();
     return () => {
       isMounted = false;
     };
   }, []);
-
+  
   useEffect(() => {
     const getTokensForHourly = async () => {
       try {
